@@ -1,6 +1,5 @@
 package com.fyre.cobblecuisine.influence;
 
-import com.cobblemon.mod.common.api.spawning.SpawnBucket;
 import com.cobblemon.mod.common.api.spawning.detail.PokemonSpawnDetail;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnAction;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail;
@@ -44,6 +43,6 @@ public class DubiousInfluence implements SpawningInfluence {
 	@Override public float affectWeight(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition, float weight) { return weight; }
 	@Override public void affectAction(@NotNull SpawnAction<?> action) { }
 	@Override public void affectSpawn(@NotNull SpawnAction<?> action, @NotNull Entity entity ) { }
-	@Override public void affectBucketWeights(@NotNull Map<SpawnBucket, Float> bucketWeights) { }
+	@Override public void affectBucketWeights(@NotNull Map<String, Float> bucketWeights) { }
 	@Override public boolean isAllowedPosition(@NotNull ServerWorld world, @NotNull BlockPos pos, @NotNull SpawnablePositionCalculator<?, ?> spawnablePositionCalculator) { return true; }
 }

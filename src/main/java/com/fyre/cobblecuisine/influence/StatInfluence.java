@@ -2,7 +2,6 @@ package com.fyre.cobblecuisine.influence;
 
 import com.cobblemon.mod.common.api.pokemon.stats.Stat;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
-import com.cobblemon.mod.common.api.spawning.SpawnBucket;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnAction;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail;
 import com.cobblemon.mod.common.api.spawning.influence.SpawningInfluence;
@@ -64,7 +63,7 @@ public class StatInfluence implements SpawningInfluence {
 
     @Override public boolean isExpired() { return false; }
     @Override public void affectAction(@NotNull SpawnAction<?> action) { }
-    @Override public void affectBucketWeights(@NotNull Map<SpawnBucket, Float> bucketWeights) { }
+    @Override public void affectBucketWeights(@NotNull Map<String, Float> bucketWeights) { }
     @Override public boolean isAllowedPosition(@NotNull ServerWorld world, @NotNull BlockPos pos, @NotNull SpawnablePositionCalculator<?, ?> spawnablePositionCalculator) { return true; }
     @Override public boolean affectSpawnable(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition) { return true; }
     @Override public float affectWeight(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition, float weight) { return weight; }
