@@ -1,10 +1,10 @@
 package com.fyre.cobblecuisine.item.food;
 
+import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.CobblemonSounds;
-import com.cobblemon.mod.common.api.battles.model.actor.BattleActor;
+import net.fabricmc.loader.api.FabricLoader;
 import com.cobblemon.mod.common.api.events.CobblemonEvents;
 import com.cobblemon.mod.common.api.events.pokemon.LevelUpEvent;
-import com.cobblemon.mod.common.api.events.pokemon.healing.PokemonHealedEvent;
 import com.cobblemon.mod.common.api.item.HealingSource;
 import com.cobblemon.mod.common.api.item.PokemonSelectingItem;
 import com.cobblemon.mod.common.api.moves.BenchedMove;
@@ -12,13 +12,13 @@ import com.cobblemon.mod.common.api.moves.Move;
 import com.cobblemon.mod.common.api.moves.MoveTemplate;
 import com.cobblemon.mod.common.api.pokemon.stats.Stat;
 import com.cobblemon.mod.common.api.pokemon.stats.Stats;
-import com.cobblemon.mod.common.battles.pokemon.BattlePokemon;
 import com.cobblemon.mod.common.item.CobblemonItem;
 import com.cobblemon.mod.common.item.battle.BagItem;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 
 import com.fyre.cobblecuisine.random.PRNG;
 import com.fyre.cobblecuisine.util.CobbleCuisineUtils;
+import com.fyre.cobblecuisine.util.PokemonFeeding;
 
 import kotlin.Unit;
 
@@ -33,6 +33,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
 
 import org.jetbrains.annotations.NotNull;
@@ -54,9 +55,16 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 	@Override public BagItem getBagItem() { return null; }
 
 	@Override
+	public UseAction getUseAction(ItemStack stack) {
+		return UseAction.DRINK;
+	}
+
+	@Override
 	public boolean canUseOnPokemon(@NotNull ItemStack stack, @NotNull Pokemon pokemon) {
 		return switch (this.type) {
-			case 1 -> pokemon.getCurrentHealth() > 0 && pokemon.getDmaxLevel() < 10;
+			case 1 -> pokemon.getCurrentHealth() > 0
+                    && pokemon.getDmaxLevel() < Cobblemon.INSTANCE.getConfig().getMaxDynamaxLevel()
+                    && (!FabricLoader.getInstance().isModLoaded("mega_showdown") || !pokemon.getSpecies().getDynamaxBlocked());
 			case 2, 5, 6 -> pokemon.getCurrentHealth() > 0;
 			case 3 -> pokemon.getCurrentHealth() > 0 && pokemon.getLevel() < 100;
 			case 4 -> true;
@@ -78,14 +86,16 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 
 	@Override
 	public TypedActionResult<ItemStack> applyToPokemon(@NotNull ServerPlayerEntity player, @NotNull ItemStack stack, @NotNull Pokemon pokemon) {
+		if (stack.isEmpty() || !canUseOnPokemon(stack, pokemon)) return TypedActionResult.fail(stack);
 		boolean success = false;
 
 		switch (this.type) {
 			case 1:
-				// Kinda bleh
-				if (pokemon.getDmaxLevel() == 10) break;
-				pokemon.setDmaxLevel(Math.min(10, pokemon.getDmaxLevel() + PRNG.nextInt(2, 4)));
-				success = true;
+				int previousDmaxLevel = pokemon.getDmaxLevel();
+                // Native setter clamps and synchronizes; Mega Showdown reads this same value.
+				pokemon.setDmaxLevel((int) Math.min(Cobblemon.INSTANCE.getConfig().getMaxDynamaxLevel(),
+                        (long) previousDmaxLevel + PRNG.nextInt(2, 4)));
+				success = pokemon.getDmaxLevel() > previousDmaxLevel;
 				break;
 			case 2:
 				//noinspection ForLoopReplaceableByForEach
@@ -114,20 +124,7 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 					}
 				}
 
-				if (!pokemon.isFullHealth()) {
-					int amountToHeal = Math.min(20, pokemon.getMaxHealth() - pokemon.getCurrentHealth());
-					final int[] healAmountHolder = { amountToHeal };
-					CobblemonEvents.POKEMON_HEALED.postThen(
-							new PokemonHealedEvent(pokemon, amountToHeal, this),
-							(event) -> Unit.INSTANCE,
-							(event) -> {
-								healAmountHolder[0] = event.getAmount();
-								return Unit.INSTANCE;
-							}
-					);
-					pokemon.setCurrentHealth(healAmountHolder[0]);
-					success = true;
-				}
+				success |= PokemonFeeding.healPokemon(pokemon, 20, this);
 				break;
 			case 5:
 				List<Move> ppMaxMoves = pokemon.getMoveSet().getMoves();
@@ -138,8 +135,7 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 				break;
 			case 6:
 				// I hate this so much
-				List<MoveTemplate> eggMoves = pokemon.getSpecies().getMoves().getEggMoves();
-				Collections.shuffle(eggMoves);
+				List<MoveTemplate> eggMoves = CobbleCuisineUtils.shuffledCopy(pokemon.getSpecies().getMoves().getEggMoves());
 				Set<MoveTemplate> currentMoveSet = new HashSet<>();
 				for (Move move : pokemon.getMoveSet().getMoves()) currentMoveSet.add(move.getTemplate());
 
@@ -158,6 +154,7 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 		}
 
 		if (success) {
+            pokemon.onChange(null);
 			if (!player.isCreative()) {
 				stack.decrement(1);
 				player.getInventory().offerOrDrop(new ItemStack(Items.GLASS_BOTTLE));
@@ -165,7 +162,7 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 
 			if (pokemon.getEntity() != null && pokemon.getEntity().getWorld() instanceof ServerWorld serverWorld) {
 				pokemon.getEntity().playSound(CobblemonSounds.BERRY_EAT, 0.7f, 1.3f);
-				player.sendMessage(Text.translatable("item.cobblecuisine.fancyshake.use", pokemon.getDisplayName(false)), false);
+				player.sendMessage(Text.translatable("item.cobblecuisine.fancyshake.use", pokemon.getDisplayName(true)), false);
 				serverWorld.spawnParticles(ParticleTypes.HEART, pokemon.getEntity().getX(), pokemon.getEntity().getY() + pokemon.getEntity().getHeight(), pokemon.getEntity().getZ(), 5, 0.5, 0.5, 0.5, 0.1);
 			}
 
@@ -180,11 +177,4 @@ public class FancyShakeItem extends CobblemonItem implements PokemonSelectingIte
 		tooltip.addAll(tooltips);
 		super.appendTooltip(stack, context, tooltip, type);
 	}
-
-	@Override public void applyToBattlePokemon(@NotNull ServerPlayerEntity serverPlayerEntity, @NotNull ItemStack itemStack, @NotNull BattlePokemon battlePokemon) { DefaultImpls.applyToBattlePokemon(this, serverPlayerEntity, itemStack, battlePokemon); }
-	@Override public boolean canUseOnBattlePokemon(@NotNull ItemStack stack, @NotNull BattlePokemon battlePokemon) { return PokemonSelectingItem.DefaultImpls.canUseOnBattlePokemon(this, stack, battlePokemon); }
-	@NotNull @Override public TypedActionResult<ItemStack> interactWithSpecificBattle(@NotNull ServerPlayerEntity serverPlayerEntity, @NotNull ItemStack itemStack, @NotNull BattlePokemon battlePokemon) { return PokemonSelectingItem.DefaultImpls.interactWithSpecificBattle(this, serverPlayerEntity, itemStack, battlePokemon); }
-	@NotNull @Override public TypedActionResult<ItemStack> interactGeneral(@NotNull ServerPlayerEntity serverPlayerEntity, @NotNull ItemStack itemStack) { return PokemonSelectingItem.DefaultImpls.interactGeneral(this, serverPlayerEntity, itemStack); }
-	@NotNull @Override public TypedActionResult<ItemStack> interactGeneralBattle(@NotNull ServerPlayerEntity serverPlayerEntity, @NotNull ItemStack itemStack, @NotNull BattleActor battleActor) { return PokemonSelectingItem.DefaultImpls.interactGeneralBattle(this, serverPlayerEntity, itemStack, battleActor); }
-	@NotNull @Override public TypedActionResult<ItemStack> use(@NotNull ServerPlayerEntity serverPlayerEntity, @NotNull ItemStack itemStack, boolean ignoreShift) { return PokemonSelectingItem.DefaultImpls.use(this, serverPlayerEntity, itemStack, ignoreShift); }
 }

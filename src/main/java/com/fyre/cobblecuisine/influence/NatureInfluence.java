@@ -1,11 +1,12 @@
 package com.fyre.cobblecuisine.influence;
 
-import com.cobblemon.mod.common.api.spawning.position.SpawnablePosition;
-import com.cobblemon.mod.common.api.spawning.position.calculators.SpawnablePositionCalculator;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Nature;
 import com.cobblemon.mod.common.api.pokemon.Natures;
+import com.cobblemon.mod.common.api.spawning.position.SpawnablePosition;
+import com.cobblemon.mod.common.api.spawning.position.calculators.SpawnablePositionCalculator;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnAction;
+import com.cobblemon.mod.common.api.spawning.detail.PokemonSpawnAction;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail;
 import com.cobblemon.mod.common.api.spawning.influence.SpawningInfluence;
 
@@ -21,8 +22,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Map;
 
 import static com.fyre.cobblecuisine.CobbleCuisine.LOGGER;
 import static com.fyre.cobblecuisine.CobbleCuisine.DEBUG;
@@ -95,6 +94,7 @@ public class NatureInfluence implements SpawningInfluence {
 
 	@Override
 	public void affectSpawn(@NotNull SpawnAction<?> action, @NotNull Entity entity) {
+		if (!(action instanceof PokemonSpawnAction pokemonAction) || pokemonAction.getProps().getNature() != null) return;
 		if (!player.hasStatusEffect(CobbleCuisineEffects.NATURE_BUFF_MARKER.entry)) return;
 		if (!(entity instanceof PokemonEntity pokemonEntity) || pokemonEntity.getPokemon().isPlayerOwned()) return;
 
@@ -112,10 +112,9 @@ public class NatureInfluence implements SpawningInfluence {
 		}
 	}
 
-    @Override public boolean isExpired() { return false; }
-    @Override public void affectAction(@NotNull SpawnAction<?> action) { }
-    @Override public void affectBucketWeights(@NotNull Map<String, Float> bucketWeights) { }
-    @Override public boolean isAllowedPosition(@NotNull ServerWorld world, @NotNull BlockPos pos, @NotNull SpawnablePositionCalculator<?, ?> spawnablePositionCalculator) { return true; }
-    @Override public boolean affectSpawnable(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition) { return true; }
-    @Override public float affectWeight(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition, float weight) { return weight; }
+	@Override public boolean isExpired() { return false; }
+	@Override public void affectAction(@NotNull SpawnAction<?> action) { }
+	@Override public boolean isAllowedPosition(@NotNull ServerWorld world, @NotNull BlockPos pos, @NotNull SpawnablePositionCalculator<?, ?> contextCalculator) { return true; }
+	@Override public boolean affectSpawnable(@NotNull SpawnDetail detail, @NotNull SpawnablePosition ctx) { return true; }
+	@Override public float affectWeight(@NotNull SpawnDetail detail, @NotNull SpawnablePosition ctx, float weight) { return weight; }
 }

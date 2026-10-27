@@ -5,36 +5,40 @@
   "name": "CobbleCuisine",
   "description": "Snacks and treats for your Cobblemon adventures!",
   "authors": [
-	"Fyre520",
-	"tredevelops",
-	"EasyMochi"
+    "Fyre520",
+    "tredevelops",
+    "EasyMochi"
   ],
   "contact": {},
   "license": "MIT",
   "icon": "assets/cobblecuisine/icon.png",
   "environment": "*",
   "custom": {
-	"modmenu:api": true
+    "modmenu:api": true
   },
   "entrypoints": {
-	"client": [
-	  "com.fyre.cobblecuisine.client.CobbleCuisineClient"
-	],
-	"main": [
-	  "com.fyre.cobblecuisine.CobbleCuisine"
-	],
-	"modmenu": [
-	  "com.fyre.cobblecuisine.config.CobbleCuisineModMenuCompat"
-	]
+    "client": [
+      "com.fyre.cobblecuisine.client.CobbleCuisineClient"
+    ],
+    "main": [
+      "com.fyre.cobblecuisine.CobbleCuisine"
+    ],
+    "modmenu": [
+      "com.fyre.cobblecuisine.config.CobbleCuisineModMenuCompat"
+    ]
   },
   "mixins": [
-	  "cobblecuisine.mixins.json"
+    "cobblecuisine.mixins.json"
   ],
   "depends": {
-	"fabricloader": ">=${loader_version}",
-	"minecraft": "${minecraft_version}"
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}",
+    "cobblemon": ">=1.8.1 <1.9.0",
+    "java": ">=21",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=1.13.6+kotlin.2.2.20"
   },
   "suggests": {
-	"modmenu": ">=${modmenu_version}"
+    "modmenu": ">=${modmenu_version}"
   }
 }

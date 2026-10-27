@@ -1,10 +1,11 @@
 package com.fyre.cobblecuisine.influence;
 
-import com.cobblemon.mod.common.api.spawning.position.SpawnablePosition;
-import com.cobblemon.mod.common.api.spawning.position.calculators.SpawnablePositionCalculator;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.abilities.HiddenAbilityType;
+import com.cobblemon.mod.common.api.spawning.position.SpawnablePosition;
+import com.cobblemon.mod.common.api.spawning.position.calculators.SpawnablePositionCalculator;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnAction;
+import com.cobblemon.mod.common.api.spawning.detail.PokemonSpawnAction;
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail;
 import com.cobblemon.mod.common.api.spawning.influence.SpawningInfluence;
 
@@ -20,7 +21,6 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.Map;
 
 import static com.fyre.cobblecuisine.CobbleCuisine.LOGGER;
 import static com.fyre.cobblecuisine.CobbleCuisine.DEBUG;
@@ -38,6 +38,7 @@ public class HiddenAbilityInfluence implements SpawningInfluence {
 
     @Override
     public void affectSpawn(@NotNull SpawnAction<?> action, @NotNull Entity entity) {
+        if (!(action instanceof PokemonSpawnAction pokemonAction) || pokemonAction.getProps().getAbility() != null) return;
         // Check if player has the hidden ability effect
         if (!player.hasStatusEffect(CobbleCuisineEffects.HIDDEN_ABILITY.entry)) return;
 
@@ -75,8 +76,7 @@ public class HiddenAbilityInfluence implements SpawningInfluence {
 
     @Override public boolean isExpired() { return false; }
     @Override public void affectAction(@NotNull SpawnAction<?> action) { }
-    @Override public void affectBucketWeights(@NotNull Map<String, Float> bucketWeights) { }
-    @Override public boolean isAllowedPosition(@NotNull ServerWorld world, @NotNull BlockPos pos, @NotNull SpawnablePositionCalculator<?, ?> spawnablePositionCalculator) { return true; }
-    @Override public boolean affectSpawnable(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition) { return true; }
-    @Override public float affectWeight(@NotNull SpawnDetail detail, @NotNull SpawnablePosition spawnablePosition, float weight) { return weight; }
+    @Override public boolean isAllowedPosition(@NotNull ServerWorld world, @NotNull BlockPos pos, @NotNull SpawnablePositionCalculator<?, ?> contextCalculator) { return true; }
+    @Override public boolean affectSpawnable(@NotNull SpawnDetail detail, @NotNull SpawnablePosition ctx) { return true; }
+    @Override public float affectWeight(@NotNull SpawnDetail detail, @NotNull SpawnablePosition ctx, float weight) { return weight; }
 }
