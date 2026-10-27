@@ -86,7 +86,7 @@ If you are the owner of any referenced content and wish for changes or removal, 
 
 <!-- ashley-release-information -->
 
-## Ashley's builds
+## My builds
 
 This is an unofficial maintenance fork. Original authors retain ownership and credit. See the [upstream project](https://github.com/Fyre520/CobbleCuisine-Java) for the original mod. Local changes do not imply upstream endorsement.
 
